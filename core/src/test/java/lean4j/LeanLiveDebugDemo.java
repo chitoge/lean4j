@@ -5,10 +5,10 @@ import org.graalvm.polyglot.proxy.ProxyExecutable;
 import com.oracle.truffle.api.debug.*;
 import java.net.URI;
 public final class LeanLiveDebugDemo {
-  static Value est(Value r){ return r.hasArrayElements()? r.getArrayElement(0): r; }
   public static void main(String[] a) throws Exception {
     try (Context c = Context.newBuilder("lean4j-jit").allowAllAccess(true).allowCreateThread(true).build()) {
       Value m = c.eval("lean4j-jit", System.getProperty("lean4j.ir", System.getProperty("ir")));
+      Value api = m.getMember("api");   // drive the library by its documented names
       Debugger dbg = Debugger.find(c.getEngine());
       DebuggerSession session = dbg.startSession(event -> {
         System.out.println("\n⏸  BREAKPOINT hit — live Lean call stack:");
@@ -33,15 +33,19 @@ public final class LeanLiveDebugDemo {
       URI uri = java.nio.file.Path.of("" + System.getProperty("lean.src", "Leancremental") + "/Leancremental/Core/State.lean").toUri();
       session.install(Breakpoint.newBuilder(uri).lineIs(515).build());
 
-      // build a tiny graph and stabilize → should suspend at the breakpoint
+      // build a tiny graph and stabilize → should suspend at the breakpoint. Drive the
+      // library by its documented names via module.api (the same path as `make polyglot`);
+      // the api handles the IO world token and result unwrapping.
       ProxyExecutable mul = (Value... x) -> x[0].asDouble()*x[1].asDouble();
-      Value st = est(m.invokeMember("lcState", 0));
-      Value v1 = est(m.invokeMember("lcVar", st, 3.0, 0));
-      Value v2 = est(m.invokeMember("lcVar", st, 5.0, 0));
-      Value prod = est(m.invokeMember("lcMap2", est(m.invokeMember("lcWatch",v1,0)), est(m.invokeMember("lcWatch",v2,0)), mul, 0));
-      est(m.invokeMember("lcObserve", prod, 0));
+      Value st = api.invokeMember("Leancremental.State.create");
+      Value v1 = api.invokeMember("Leancremental.Var.create", st, 3.0);
+      Value v2 = api.invokeMember("Leancremental.Var.create", st, 5.0);
+      Value prod = api.invokeMember("Leancremental.map2",
+          api.invokeMember("Leancremental.Var.watch", v1),
+          api.invokeMember("Leancremental.Var.watch", v2), mul);
+      api.invokeMember("Leancremental.observe", prod);
       System.out.println("calling stabilize (breakpoint armed on State.stabilize)…");
-      est(m.invokeMember("lcStab", st, 0));
+      api.invokeMember("Leancremental.State.stabilize", st);
       System.out.println("…stabilize returned.");
       session.close();
     }

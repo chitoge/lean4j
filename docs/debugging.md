@@ -24,17 +24,16 @@ That's the whole setup: lower with `src_ranges.json`, then pass `-Dlean.src`.
 
 When guest code throws, the exception's stack trace shows the Lean call chain with file and
 line — including frames inside compiler-generated code, which inherit their origin
-function's location. For example, an error raised deep inside an incremental-computation
-engine comes back as:
+function's location. `make trace` runs exactly this: a Java lambda throws while
+Leancremental's engine recomputes a node, and the exception comes back source-located:
 
 ```
 guest error: ... boom! (a Java lambda inside the engine)
 
 Lean stack trace through the library, source-located:
-   State.stabilize                  → State.lean:515
-   State.stabilizeInner             → State.lean:507
-   Internal.State.drainRecomputeHeap → Internal.lean:715
-   Internal.State.stabilizeOne      → Internal.lean:668
+   Internal.State.stabilizeOne   → Internal.lean:668
+   State.stabilizeInner          → State.lean:507
+   State.stabilizeLocked         → State.lean:479
 ```
 
 You read these off a `PolyglotException` like any other guest stack trace; each frame's

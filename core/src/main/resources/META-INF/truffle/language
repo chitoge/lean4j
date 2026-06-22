@@ -1,7 +1,0 @@
-id=lean4j
-name=Lean 4
-implementationName=lean4j
-version=4.31.0
-defaultMimeType=application/x-lean4j
-mimeType0=application/x-lean4j
-className=lean4j.truffle.LeanLanguage

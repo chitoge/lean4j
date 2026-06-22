@@ -1,4 +1,8 @@
--- Exports Lean4J function IR to lean4j_ir.json for the JVM Truffle interpreter.
+-- Exports the self-contained example's IR (Lean4J.lean) to lean4j_ir.json for the runtime.
+-- DELIBERATELY bare-lean: it carries its own small serializer and has NO lake/library
+-- dependency, so the smoke / jit-example / bench path needs nothing but `lean` + the jars.
+-- The reusable serializer that user-facing exporters import lives in
+-- lean-export/Lean4JExport.lean; this internal example intentionally does not use it.
 -- Run via: LEAN_PATH=lean-runtime lean -R lean-runtime lean-runtime/LeanIRExport.lean
 import Lean
 import Lean.Compiler.IR

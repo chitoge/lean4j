@@ -84,13 +84,36 @@ Value node = api.invokeMember("YourLib.map2", left, right, times);
 This is how you drive a Lean library's higher-order API from the host without writing any
 Lean glue.
 
+## Advanced: driving Lean's incremental engine from Java
+
+This is where polyglot stops being a parlor trick. Leancremental is an *incremental*
+computation library — you build a graph of cells and formulas, and when an input changes it
+recomputes only what's affected. With lean4j you get that engine on the JVM, with the
+formulas written in Java.
+
+`make incremental` builds a tiny reactive spreadsheet: `width`, `height`, `price` cells, and
+three formulas — `area`, `perimeter`, `cost` — that are Java lambdas. Each lambda prints when
+it runs, so you can watch the engine work:
+
+```
+▸ price 10 → 12 — only `cost` reads price
+     ƒ cost = area·price
+   → cost = 144.0   perimeter = 14.0
+     (area & perimeter were not touched)
+```
+
+First stabilize runs all three formulas; changing `price` re-runs **only `cost`** (nothing
+else depends on it); changing `width` re-runs all three. You wrote the business logic in
+Java; Lean's engine decided the minimum set to recompute and kept the graph consistent. That's
+the real pitch — a mature Lean library's algorithms orchestrating your host code, from the JVM.
+
 ## From JavaScript
 
 Because it's all polyglot, the same works from GraalJS. A JS function passed where Lean
 wants a function behaves just like the Java lambda above:
 
 ```js
-const module = Polyglot.eval('lean4j-jit', 'lean-runtime/lean4j_ir.json');
+const module = Polyglot.eval('lean4j-jit', 'yourlib_ir.json');
 const api = module.api;
 
 // invoke by the (dotted) name with bracket-call syntax; a JS function goes straight in

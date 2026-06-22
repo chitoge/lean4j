@@ -66,23 +66,28 @@ whole pipeline working end to end. Where to next:
 
 ## The make targets
 
-| Target | What it does | Needs Lean? |
-|---|---|---|
-| `make java` | compile the interpreter | no |
-| `make smoke` | lower the example, warm it, assert the JIT engaged | yes |
-| `make jit-example` | lower and run the in-repo example | yes |
-| `make bench` | A/B JIT benchmark (shows compilation traces) | yes |
-| `make lir-export` | just lower the in-repo example to IR | yes |
-| `make leancremental` / `make debug` | run a lowered external library (see below) | no* |
+| Target | What it does |
+|---|---|
+| `make java` | compile the interpreter (no Lean needed) |
+| `make smoke` | lower the in-repo example, warm it, **assert the JIT engaged** |
+| `make jit-example` | lower the in-repo example and call it from Java |
+| `make json-example` | lower Lean's standard-library JSON parser and call it |
+| `make bench` | A/B benchmark: the JIT vs the tree-walker |
+| `make leancremental` | run a lowered library's own test suite on the JVM |
+| `make polyglot` | call a lowered library by documented names, with a Java lambda |
+| `make incremental` | incremental-recompute showcase (the formulas are in Java) |
+| `make debug` | live debugger — breakpoint, walk the stack, inspect the frame |
+| `make trace` | post-mortem source-located stack trace |
 
-\* these run a *pre-lowered* library, so they need its IR present first — they'll tell you
-how to generate it if it's missing.
+The `leancremental` / `polyglot` / `incremental` / `debug` / `trace` targets run a
+*pre-lowered* library, so they need its IR present first — they tell you how to generate it
+if it's missing ([generate-ir-and-run.md](generate-ir-and-run.md) walks through it).
 
 ## Without Nix
 
 If you'd rather use your own tools, everything the flake sets via the environment is
 overridable in the `Makefile`: `GRAALVM`, `M2` (a Maven-layout dir holding the Truffle
-jars), `GVER`, and `lean`/`leanc` on your `PATH`. You'll need GraalVM CE 25.0.2, the
+jars), `GVER`, and `lean` on your `PATH`. You'll need GraalVM CE 25.0.2, the
 Truffle 25.0.2 libraries, and a Lean toolchain matching whatever you lower. The Nix path
 is strongly recommended — getting the GraalVM/Truffle versions to match by hand is exactly
 the pain the flake removes.

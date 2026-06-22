@@ -119,10 +119,11 @@ verified path. Do it all from inside `nix develop` (you need Lean for the loweri
 nix develop          # in the lean4j repo
 LEAN4J="$PWD"        # remember where lean4j is
 
-# 1. get the library and build its .oleans (elan picks the right Lean toolchain)
+# 1. get the library and build its .oleans (elan picks the right Lean toolchain).
+#    TestsSupport builds the library + the Tests modules the example exporter imports.
 git clone https://github.com/chitoge/Leancremental
 cd Leancremental
-lake build
+lake build TestsSupport
 
 # 2. add lean4j's exporter as a dependency, then lower. The repo's example exporter
 #    (Export.lean) `import`s the shared Lean4JExport library — so you require it, not copy it.
@@ -133,7 +134,7 @@ name = "lean4j"
 path = "$LEAN4J"
 EOF
 lake update lean4j
-cp "$LEAN4J"/leancremental-export/Export.lean "$LEAN4J"/leancremental-export/SrcRanges.lean .
+cp "$LEAN4J"/examples/leancremental/Export.lean "$LEAN4J"/examples/leancremental/SrcRanges.lean .
 LEAN4J_OUT="$LEAN4J/lean-runtime" lake env lean Export.lean      # → leancremental_ir.json
 LEAN4J_OUT="$LEAN4J/lean-runtime" lake env lean SrcRanges.lean   # → src_ranges.json (for debugging)
 
@@ -141,11 +142,13 @@ LEAN4J_OUT="$LEAN4J/lean-runtime" lake env lean SrcRanges.lean   # → src_range
 cd "$LEAN4J"
 make leancremental                          # the library's own test suite, on the JVM
 make polyglot                               # call it by name from Java + a host lambda
+make incremental                            # incremental recompute, with formulas in Java
 make debug DEBUG_SRC="$LEAN4J/Leancremental" # set a breakpoint, inspect the live frame
 ```
 
-`make polyglot` is the [polyglot scenario](polyglot.md) and `make debug` is the
-[debugging scenario](debugging.md) — those pages explain what each one shows.
+`make polyglot` and `make incremental` are the [polyglot scenario](polyglot.md); `make debug`
+(and `make trace`) are the [debugging scenario](debugging.md) — those pages explain what each
+one shows.
 
 ## Running your own lowered library
 

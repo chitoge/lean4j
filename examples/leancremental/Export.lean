@@ -321,65 +321,8 @@ def testConcurrency : IO Nat := do
   let mapped := (prom.result?).map (fun o => match o with | some v => v + 1 | none => 0)
   pure (fan + Task.get mapped)
 
--- ════════════ Leancremental, driven from the JVM host ════════════
-section LeancrementalDemo
-open Leancremental
-
--- Prism tutorial primitives (Float), each a thin export over the real API.
-@[export lc_state]   def lcState : IO State := State.create
-@[export lc_var]     def lcVar (s : State) (v : Float) : IO (Var Float) := Var.create s v
-@[export lc_watch]   def lcWatch (v : Var Float) : IO (Incr Float) := pure (Var.watch v)
--- Generic combinators: `f` is supplied by the HOST (a Java/JS lambda) — no per-op wrapper.
-@[export lc_map2]    def lcMap2 (a b : Incr Float) (f : Float → Float → Float) : IO (Incr Float) := map2 a b f
-@[export lc_map]     def lcMap (a : Incr Float) (f : Float → Float) : IO (Incr Float) := map a f
-@[export lc_observe] def lcObserve (i : Incr Float) : IO (Observer Float) := observe i
-@[export lc_stab]    def lcStab (s : State) : IO Unit := State.stabilize s
-@[export lc_set]     def lcSet (v : Var Float) (x : Float) : IO Unit := Var.set v x
-@[export lc_val]     def lcVal (o : Observer Float) : IO Float := Observer.value! o
-
--- Incremental sum-reduction tree (Nat): one observed root over n input leaves;
--- changing one leaf recomputes only the log₂(n) nodes on its path.
-structure Demo where
-  state : State
-  leaves : Array (Var Nat)
-  observer : Observer Nat
-
-private partial def pairUp : List (Incr Nat) → IO (List (Incr Nat))
-  | a :: b :: rest => return (← map2 a b (· + ·)) :: (← pairUp rest)
-  | xs => return xs
-private partial def reduceAll (xs : List (Incr Nat)) : IO (Incr Nat) := do
-  match xs with
-  | [x] => return x
-  | []  => throw (IO.userError "reduceAll: empty")
-  | _   => reduceAll (← pairUp xs)
-
-@[export lc_build] def lcBuild (n : Nat) : IO Demo := do
-  let state ← State.create
-  let leaves ← (List.range n).mapM (fun i => Var.create state i)
-  let root ← reduceAll (leaves.map Var.watch)
-  let observer ← observe root
-  State.stabilize state
-  pure ⟨state, leaves.toArray, observer⟩
-
-@[export lc_dset]  def lcDSet (d : Demo) (i v : Nat) : IO Unit :=
-  match d.leaves[i]? with | some var => Var.set var v | none => pure ()
-@[export lc_dstab] def lcDStab (d : Demo) : IO Unit := State.stabilize d.state
-@[export lc_dval]  def lcDVal (d : Demo) : IO Nat := Observer.value! d.observer
-@[export lc_leaves] def lcLeaves (d : Demo) : IO Nat := pure d.leaves.size
-
--- A burst of `rounds` deterministic updates (leaf (start+k)%n := start+k, then stabilize),
--- run as ONE host call so the hot incremental loop stays in JIT-compiled Lean. Returns the
--- final root; the host can replay the same pattern to verify it.
-@[export lc_burst] def lcBurst (d : Demo) (start rounds : Nat) : IO Nat := do
-  let n := d.leaves.size
-  for k in [0:rounds] do
-    let v := start + k
-    match d.leaves[(start + k) % n]? with
-    | some var => Var.set var v
-    | none => pure ()
-    State.stabilize d.state
-  Observer.value! d.observer
-end LeancrementalDemo
+-- (The debugger/polyglot demos drive Leancremental entirely through `module.api` — the
+--  surfaced documented names — so there are no hand-written host shims here.)
 
 @[export bench_kernel]
 def benchKernel (iters : UInt64) : UInt64 := Id.run do
@@ -399,5 +342,5 @@ surface Leancremental
   -- write to $LEAN4J_OUT/leancremental_ir.json (default: current dir), so this works
   -- on any machine — point LEAN4J_OUT at lean4j's lean-runtime/ to run it directly.
   let dir := (← IO.getEnv "LEAN4J_OUT").getD "."
-  Lean4JExport.exportRoots env ([`testSumNat, `testEvalMap, `testLoop, `testJoin, `testIORef, `testShare, `testIncr1, `testIncr2, `testIncr, `testBind, `testMap3, `testSeq, `testPrint, `testCore, `testAll, `testNoFS, `testQuery, `testCookbook, `testStrCmp, `testFloat, `testBignum, `testStrHash, `testParBench, `testConcurrency, `testStrops, `testTrig, `testNameBeq, `testJson, `testIO, `testSubproc, `testStdin, `testExit, `testUvSys, `lcState, `lcVar, `lcWatch, `lcMap2, `lcMap, `lcObserve, `lcStab, `lcSet, `lcVal, `lcBuild, `lcDSet, `lcDStab, `lcDVal, `lcLeaves, `lcBurst, `benchKernel] ++ bindRoots)
+  Lean4JExport.exportRoots env ([`testSumNat, `testEvalMap, `testLoop, `testJoin, `testIORef, `testShare, `testIncr1, `testIncr2, `testIncr, `testBind, `testMap3, `testSeq, `testPrint, `testCore, `testAll, `testNoFS, `testQuery, `testCookbook, `testStrCmp, `testFloat, `testBignum, `testStrHash, `testParBench, `testConcurrency, `testStrops, `testTrig, `testNameBeq, `testJson, `testIO, `testSubproc, `testStdin, `testExit, `testUvSys, `benchKernel] ++ bindRoots)
     s!"{dir}/leancremental_ir.json"
