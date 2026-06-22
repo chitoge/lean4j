@@ -4,15 +4,19 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 
 /**
- * Runs real Leancremental library code on the lean4j-jit runtime.
+ * The lean4j-jit runtime conformance suite: runs real Leancremental library code on the
+ * interpreter and asserts every result matches native Lean. Leancremental is the test
+ * corpus, not the subject — this checks the *interpreter*. Run via {@code make leancremental}.
  *
- * These are host-constructible @[export] shims over the library's pure model
- * (Leancremental.Pure): they build closures, arrays and ADTs internally, so
- * calling them exercises pap/app closures, Array.foldl via the Id monad,
- * ctor/proj/case, and Nat — all interpreted from the exported IR, with the
- * opaque externs (Array.push, Nat.add, ...) implemented in Java.
+ * It calls host-constructible {@code @[export]} shims that exercise, roughly in order: the
+ * pure model (pap/app closures, Array.foldl via the Id monad, ctor/proj/case, Nat),
+ * join-point control flow, copy-on-shared array soundness, the full incremental engine
+ * (State/Var/map/map2/observe/stabilize), primitive fidelity (String.compare/hash, Float,
+ * bignum Int/Nat), IO + filesystem + subprocess + UV syscalls, real-threaded concurrency,
+ * and finally the library's own 11-module suite ({@code Tests.lean}) — all interpreted from
+ * the exported IR, with the opaque externs (Array.push, Nat.add, ...) implemented in Java.
  */
-public class LeancrementalExample {
+public class RuntimeConformanceTest {
 
     public static void main(String[] args) throws Exception {
         String irPath = System.getProperty("lean4j.ir", "lean-runtime/leancremental_ir.json");
@@ -20,7 +24,7 @@ public class LeancrementalExample {
         System.out.println("=== Leancremental on the lean4j-jit runtime ===\n");
         System.out.println("Loading IR from: " + irPath);
 
-        try (Context ctx = Context.newBuilder().allowAllAccess(true)
+        try (Context ctx = Context.newBuilder("lean4j-jit").allowAllAccess(true)
                 .allowCreateThread(true) // Lean Tasks spawn polyglot worker threads
                 .in(new java.io.ByteArrayInputStream("alpha\nbeta\n".getBytes(java.nio.charset.StandardCharsets.UTF_8)))
                 .build()) {
@@ -63,8 +67,8 @@ public class LeancrementalExample {
             assert shared == 109 : "expected 109 (sound), got " + shared;
 
             // THE REAL ENGINE: State/Var/map/map2/observe/stabilize — the full
-            // incremental computation engine (280 fdecls interpreted, 64 externs,
-            // module-init globals, mutable graph, FBIP cell reuse), correct on the JIT.
+            // incremental computation engine (thousands of IR fdecls, module-init globals,
+            // mutable graph, FBIP cell reuse), correct on the JIT.
             long incr1 = est(mod.invokeMember("testIncr1", 0));
             System.out.println("test_incr1 (var 42 → observe → stabilize) = " + incr1);
             assert incr1 == 42 : "expected 42, got " + incr1;

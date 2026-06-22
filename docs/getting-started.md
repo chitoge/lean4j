@@ -83,6 +83,10 @@ The `leancremental` / `polyglot` / `incremental` / `debug` / `trace` targets run
 *pre-lowered* library, so they need its IR present first — they tell you how to generate it
 if it's missing ([generate-ir-and-run.md](generate-ir-and-run.md) walks through it).
 
+Each demo's source lives under [`core/src/test/java/lean4j/`](../core/src/test/java/lean4j/),
+the exporter scripts under [`examples/`](../examples/), and the reusable exporter library at
+[`lean-export/Lean4JExport.lean`](../lean-export/Lean4JExport.lean).
+
 ## Without Nix
 
 If you'd rather use your own tools, everything the flake sets via the environment is

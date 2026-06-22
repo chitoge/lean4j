@@ -8,7 +8,7 @@ JAVA     := $(GRAALVM)/bin/java
 CLS_DIR  := target/classes
 SMOKE_LOG := target/lean4j-smoke.log
 
-.PHONY: all java lir-export jit-example leancremental polyglot incremental json-example smoke debug trace bench clean
+.PHONY: all java lir-export jit-example leancremental polyglot incremental polyglot-js json-example smoke debug trace bench clean
 
 all: java
 
@@ -90,7 +90,7 @@ leancremental: java
 	$(JAVA) $(RUN_FLAGS) \
 		-Dlean4j.ir=$(LC_IR) \
 		-cp "$(RUN_CP)" \
-		lean4j.LeancrementalExample
+		lean4j.RuntimeConformanceTest
 
 # Polyglot demo: call a lowered library by its documented names via module.api,
 # pass a Java lambda into a higher-order Lean function. (Uses the Leancremental example.)
@@ -113,6 +113,18 @@ incremental: java
 		-Dlean4j.ir=$(LC_IR) \
 		-cp "$(RUN_CP)" \
 		lean4j.LeanIncrementalDemo
+
+# The same call from JavaScript: builds the graph via module.api from JS (api['name'], a
+# member read-then-call) with a JS lambda, and asserts the result — guards the guest-language
+# polyglot path the Java invokeMember demos don't cover. (Uses the Leancremental example.)
+polyglot-js: java
+	@test -f "$(LC_IR)" || { \
+		echo "Missing $(LC_IR) — lower the library first (default devShell):"; \
+		echo "  cd <Leancremental checkout> && LEAN4J_OUT=$(abspath lean-runtime) lake env lean Export.lean"; exit 1; }
+	$(JAVA) $(RUN_FLAGS) \
+		-Dlean4j.ir=$(LC_IR) \
+		-cp "$(RUN_CP)" \
+		lean4j.LeanJsDemo
 
 # Standard-library example: call Lean's own JSON parser from the JVM. Lower it first with
 #   lake build && LEAN4J_OUT=$(abspath lean-runtime) lake env lean examples/JsonExport.lean

@@ -46,9 +46,11 @@ LEAN4J_OUT="$PWD/lean-runtime" lake env lean examples/JsonExport.lean   # → le
 make json-example
 ```
 
-`examples/JsonExport.lean` is short: it does `import Lean4JExport` (the exporter library —
-**you never copy it**), exposes `Lean.Json.parse` plus a tiny `jsonRoundtrip` wrapper, and
-writes the IR. `make json-example` then parses JSON with Lean's own parser, from Java:
+[`examples/JsonExport.lean`](../examples/JsonExport.lean) is short: it does `import Lean4JExport`
+(the exporter library — **you never copy it**), exposes `Lean.Json.parse` plus a tiny
+`jsonRoundtrip` wrapper, and writes the IR. `make json-example`
+([`JsonExample.java`](../core/src/test/java/lean4j/JsonExample.java)) then parses JSON with
+Lean's own parser, from Java:
 
 ```
 jsonRoundtrip(...) :    {"ok": true, "n": 42, "hello": [1, 2, 3]}
@@ -107,13 +109,16 @@ if you'd rather just list a few functions, pass their names to `exportRoots` dir
 > **Why a script and not a CLI flag?** Lowering walks your *compiled environment* and follows
 > what each function actually calls — so it has to run as Lean code with your library imported.
 > That's also what gives `surface` the full elaborator to generate wrappers and fill defaults.
-> `import Lean4JExport` keeps the serializer itself in one place; you only write the roots.
+> [`import Lean4JExport`](../lean-export/Lean4JExport.lean) keeps the serializer itself in one
+> place; you only write the roots.
 
 ## A worked example, start to finish
 
 Let's lower a real library — [Leancremental](https://github.com/chitoge/Leancremental),
-an incremental-computation library — and run it. Every command here is part of the
-verified path. Do it all from inside `nix develop` (you need Lean for the lowering step).
+an incremental-computation library — and run it, using the repo's exporter scripts
+([`Export.lean`](../examples/leancremental/Export.lean) +
+[`SrcRanges.lean`](../examples/leancremental/SrcRanges.lean)). Every command here is part of
+the verified path. Do it all from inside `nix develop` (you need Lean for the lowering step).
 
 ```bash
 nix develop          # in the lean4j repo

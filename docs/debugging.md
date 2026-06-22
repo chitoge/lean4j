@@ -24,8 +24,10 @@ That's the whole setup: lower with `src_ranges.json`, then pass `-Dlean.src`.
 
 When guest code throws, the exception's stack trace shows the Lean call chain with file and
 line — including frames inside compiler-generated code, which inherit their origin
-function's location. `make trace` runs exactly this: a Java lambda throws while
-Leancremental's engine recomputes a node, and the exception comes back source-located:
+function's location. `make trace`
+([`LeanDebugDemo.java`](../core/src/test/java/lean4j/LeanDebugDemo.java)) runs exactly this: a
+Java lambda throws while Leancremental's engine recomputes a node, and the exception comes
+back source-located:
 
 ```
 guest error: ... boom! (a Java lambda inside the engine)
@@ -46,8 +48,10 @@ lean4j wires up Truffle's debugger instrument — the same one Chrome DevTools d
 can set a breakpoint on a Lean function, suspend execution, walk the live stack, and inspect
 the frame's variables.
 
-The repo includes a runnable demo wired to a specific example library (it breaks on a known
-function), so once you've lowered that library you can watch the whole thing work:
+The repo includes a runnable demo
+([`LeanLiveDebugDemo.java`](../core/src/test/java/lean4j/LeanLiveDebugDemo.java)) wired to a
+specific example library (it breaks on a known function), so once you've lowered that library
+you can watch the whole thing work:
 
 ```bash
 make debug DEBUG_SRC=/path/to/the-example-library

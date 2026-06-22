@@ -60,6 +60,20 @@ public final class LeanApi implements TruffleObject {
     }
 
     @ExportMessage @TruffleBoundary
+    boolean isMemberReadable(String member) {
+        return isMemberInvocable(member);
+    }
+
+    // Reading a member returns a callable bound to it, so guest languages that access members
+    // by READ-then-call work — Python's `getattr(api, "name")(...)` and JS's `api['name'](...)`,
+    // not just Java's explicit `invokeMember`.
+    @ExportMessage @TruffleBoundary
+    Object readMember(String member) throws UnknownIdentifierException {
+        if (!isMemberInvocable(member)) throw UnknownIdentifierException.create(member);
+        return new BoundMember(this, member);
+    }
+
+    @ExportMessage @TruffleBoundary
     Object invokeMember(String member, Object[] args)
             throws UnknownIdentifierException, UnsupportedTypeException, ArityException {
         String target = resolve(member);
@@ -114,5 +128,28 @@ public final class LeanApi implements TruffleObject {
 
     @ExportMessage Object toDisplayString(@SuppressWarnings("unused") boolean side) {
         return "Lean4J-API[" + registry.names().size() + " functions]";
+    }
+
+    /** A member read off {@link LeanApi} — an executable bound to one function name. */
+    @ExportLibrary(InteropLibrary.class)
+    static final class BoundMember implements TruffleObject {
+        private final LeanApi api;
+        private final String member;
+        BoundMember(LeanApi api, String member) { this.api = api; this.member = member; }
+
+        @ExportMessage boolean isExecutable() { return true; }
+
+        @ExportMessage @TruffleBoundary
+        Object execute(Object[] args) throws UnsupportedTypeException, ArityException {
+            try {
+                return api.invokeMember(member, args);
+            } catch (UnknownIdentifierException e) {
+                throw new RuntimeException(e);  // unreachable: the member was validated when read
+            }
+        }
+
+        @ExportMessage Object toDisplayString(@SuppressWarnings("unused") boolean side) {
+            return "Lean4J-API." + member;
+        }
     }
 }

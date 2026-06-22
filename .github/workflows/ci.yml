@@ -65,5 +65,6 @@ jobs:
             make leancremental                          # full suite (all 11 modules)
             make polyglot                               # documented names + a host lambda
             make incremental                            # incremental recompute, Java formulas
+            make polyglot-js                            # same call from JavaScript (guest member-call path)
             make debug DEBUG_SRC="$LEAN4J/Leancremental" # breakpoint + live frame
           '

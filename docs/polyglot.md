@@ -34,8 +34,8 @@ Numbers, strings, and the like map across naturally:
 | `Array α` | an array you can index |
 | a structure / inductive | an object whose fields you can read |
 
-`make jit-example` runs essentially the snippet above, so you can see it work before
-writing any code yourself.
+`make jit-example` ([`JitExample.java`](../core/src/test/java/lean4j/JitExample.java)) runs
+essentially the snippet above, so you can see it work before writing any code yourself.
 
 ## The ergonomic version: `module.api`
 
@@ -63,8 +63,9 @@ world arguments, and unwraps the `IO` envelope (turning a Lean error into a host
 exception). What you write is just the function and its logical arguments.
 
 > **See it run.** After lowering the example library (the worked example in
-> [generate-ir-and-run.md](generate-ir-and-run.md)), `make polyglot` runs exactly this
-> against Leancremental — building a little computation graph by calling
+> [generate-ir-and-run.md](generate-ir-and-run.md)), `make polyglot`
+> ([`LeanBindingDemo.java`](../core/src/test/java/lean4j/LeanBindingDemo.java)) runs exactly
+> this against Leancremental — building a little computation graph by calling
 > `Leancremental.map2`, `Leancremental.observe`, etc. by name, with a Java lambda as the
 > combiner — and prints the result.
 
@@ -91,9 +92,10 @@ computation library — you build a graph of cells and formulas, and when an inp
 recomputes only what's affected. With lean4j you get that engine on the JVM, with the
 formulas written in Java.
 
-`make incremental` builds a tiny reactive spreadsheet: `width`, `height`, `price` cells, and
-three formulas — `area`, `perimeter`, `cost` — that are Java lambdas. Each lambda prints when
-it runs, so you can watch the engine work:
+`make incremental` ([`LeanIncrementalDemo.java`](../core/src/test/java/lean4j/LeanIncrementalDemo.java))
+builds a tiny reactive spreadsheet: `width`, `height`, `price` cells, and three formulas —
+`area`, `perimeter`, `cost` — that are Java lambdas. Each lambda prints when it runs, so you
+can watch the engine work:
 
 ```
 ▸ price 10 → 12 — only `cost` reads price
@@ -107,18 +109,36 @@ else depends on it); changing `width` re-runs all three. You wrote the business 
 Java; Lean's engine decided the minimum set to recompute and kept the graph consistent. That's
 the real pitch — a mature Lean library's algorithms orchestrating your host code, from the JVM.
 
-## From JavaScript
+## From JavaScript or Python
 
-Because it's all polyglot, the same works from GraalJS. A JS function passed where Lean
-wants a function behaves just like the Java lambda above:
+It's all polyglot, so the same works from any GraalVM language — and a guest function
+passed where Lean wants a function behaves just like the Java lambda above. The shape is
+identical; only the syntax for the dotted name differs.
+
+From **GraalJS** (bracket access for the dotted name):
 
 ```js
 const module = Polyglot.eval('lean4j-jit', 'yourlib_ir.json');
 const api = module.api;
 
-// invoke by the (dotted) name with bracket-call syntax; a JS function goes straight in
 const node = api['YourLib.map2'](left, right, (a, b) => a * b);
 ```
+
+From **GraalPy** (`getattr` for the dotted name):
+
+```python
+import polyglot
+
+module = polyglot.eval(language="lean4j-jit", string="yourlib_ir.json")
+api = module.api
+
+node = getattr(api, "YourLib.map2")(left, right, lambda a, b: a * b)
+```
+
+In both, `api.<name>` reads the function as a callable and the guest lambda is routed back
+as a Lean closure — the same `module.api` surface you call from Java. `make polyglot-js`
+([`LeanJsDemo.java`](../core/src/test/java/lean4j/LeanJsDemo.java)) runs and asserts the
+JavaScript path in CI; the GraalPy path is the same member-read-then-call interop.
 
 ## A note on what `surface` gives you
 
