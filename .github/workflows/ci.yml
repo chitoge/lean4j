@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: build + test (nix)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # GraalVM, the Lean toolchain, and the Nix store are large — reclaim the space the
+      # runner pre-allocates to tools we don't use.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+
+      - name: Install Nix (flakes)
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # Self-contained checks — no external library. Build, prove the optimizing JIT
+      # actually engages, and run the full lower → invoke pipeline on the in-repo example
+      # and on a piece of Lean's own standard library (its JSON parser).
+      - name: Build, JIT smoke, self-contained examples
+        run: |
+          nix develop --command bash -c '
+            set -euxo pipefail
+            make java
+            make smoke          # asserts a Truffle compilation event fired
+            make jit-example     # asserts fib(10)=55, addUInt32(21,21)=42, ...
+            lake build           # build the Lean4JExport library
+            LEAN4J_OUT="$PWD/lean-runtime" lake env lean examples/JsonExport.lean
+            make json-example    # call Lean.Json.parse from the JVM
+          '
+
+      # Comprehensive: lower a real library (pinned commit), run its whole test suite,
+      # the polyglot demo, and the debugger demo — exactly the docs' worked example.
+      - name: Full suite — lower Leancremental and run it
+        run: |
+          nix develop --command bash -c '
+            set -euxo pipefail
+            LEAN4J="$PWD"
+            git clone https://github.com/chitoge/Leancremental
+            git -C Leancremental checkout 92196e8ac8bccecb591f57a04a0af74c57c2c47a
+            cd Leancremental
+            lake build
+            printf "\n[[require]]\nname = \"lean4j\"\npath = \"%s\"\n" "$LEAN4J" >> lakefile.toml
+            lake update lean4j
+            cp "$LEAN4J"/leancremental-export/Export.lean "$LEAN4J"/leancremental-export/SrcRanges.lean .
+            LEAN4J_OUT="$LEAN4J/lean-runtime" lake env lean Export.lean
+            LEAN4J_OUT="$LEAN4J/lean-runtime" lake env lean SrcRanges.lean
+            cd "$LEAN4J"
+            make leancremental                          # full suite (all 11 modules)
+            make polyglot                               # documented names + a host lambda
+            make debug DEBUG_SRC="$LEAN4J/Leancremental" # breakpoint + live frame
+          '

@@ -1,0 +1,16 @@
+target/
+lean-runtime/Lean4J.c
+lean-runtime/liblean4j.so
+.gradle/
+*.class
+lean-runtime/Lean4J.olean
+
+# generated IR / source-maps (lower a library to produce these)
+lean-runtime/*.json
+lean-runtime/*.olean
+
+# example library clones (see docs/generate-ir-and-run.md)
+/Leancremental/
+
+# Lake build output (the exporter library)
+/.lake/

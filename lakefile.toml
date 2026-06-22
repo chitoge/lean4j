@@ -1,0 +1,8 @@
+name = "lean4j"
+defaultTargets = ["Lean4JExport"]
+
+# The IR exporter, as an importable Lean library. Depend on it from your own library
+# (`require lean4j from git "..."`) and call Lean4JExport.exportRoots — no copying.
+[[lean_lib]]
+name = "Lean4JExport"
+srcDir = "lean-export"
