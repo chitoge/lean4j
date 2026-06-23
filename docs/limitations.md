@@ -1,7 +1,10 @@
 # Current limitations
 
 lean4j is useful today, but it's an interpreter with a deliberate set of trade-offs and
-some genuine rough edges. Here's the honest list so nothing surprises you.
+some genuine rough edges. Here's the honest list so nothing surprises you. Most of these
+follow from one design choice — consuming standard Lean output instead of forking the
+compiler; [design.md](design.md) explains why, and which limits a compiler patch could lift
+(fewer than you'd think).
 
 ## It's a JIT interpreter, not a compiler
 

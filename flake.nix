@@ -29,9 +29,14 @@
         { p = "org/graalvm/sdk";      a = "nativeimage";           h = "sha256-qzDep21C3XjxdV+qBirw8LhT3ys6qskqD5EufuvsOXE="; }
         { p = "org/graalvm/sdk";      a = "jniutils";              h = "sha256-sIfYsCMuLhmmwzAFQd3EXR6D638r54IBmMT0KsJLFs4="; }
         { p = "org/graalvm/js";       a = "js-language";           h = "sha256-rQdVJuwsjlFNq4Ys9hmzzMSvQLI/MXvFwXcIS6tHk80="; }
+        # GraalPy (large: ~113 MB) — only for the `make polyglot-py` test of the Python guest path.
+        { p = "org/graalvm/python";   a = "python-language";       h = "sha256-O+3cPAWmVzQV8XTqaPq7Dx/rGZlIs7H4NWJUwK6iVKA="; }
+        { p = "org/graalvm/python";   a = "python-resources";      h = "sha256-7AJYAnlKOMjP8n0QuR6QKvQL47D2FIt2EmiakruxBA4="; }
+        { p = "org/graalvm/python";   a = "python-embedding";      h = "sha256-sU099V2+fHOTP5Z2EUUVPydSx4diCa4NtkyuwimmY3Y="; }
         { p = "org/graalvm/regex";    a = "regex";                 h = "sha256-GB9+LgSH6BZ8zPQcrXbNUj9uBTjvHITaAPWrxvN+mqE="; }
         { p = "org/graalvm/shadowed"; a = "icu4j";                 h = "sha256-5TOszG1o/7m/qHqhhwKYSlHPbE0SJgXOPBY0AgX9z9Y="; }
         { p = "org/graalvm/tools";    a = "profiler-tool";         h = "sha256-RrtLkYU6voRpciidwE4qbMbwqnpJBtXNo2OOE+rDyk8="; }
+        { p = "org/graalvm/tools";    a = "coverage-tool";         h = "sha256-H0s5IAKNEhNYGxbEA2UpEf9uHVOypw4aOI+pemwfyhQ="; }
         { p = "org/graalvm/tools";    a = "chromeinspector-tool";  h = "sha256-LB0sPbtNyXvceXYgYtIKOUVadwrCPilsFKRd0GwsnYA="; }
         { p = "org/graalvm/shadowed"; a = "json";                  h = "sha256-fPSRbB0XZ6ppPL0M2rvx517DlnVp/Pjc7s/aKoC9R88="; }
       ];

@@ -42,8 +42,9 @@ The docs are split by what you're trying to do:
 |---|---|
 | Get set up and build | [docs/getting-started.md](docs/getting-started.md) |
 | Lower a Lean library to IR and run it | [docs/generate-ir-and-run.md](docs/generate-ir-and-run.md) |
-| Call Lean from Java / JavaScript | [docs/polyglot.md](docs/polyglot.md) |
-| Debug Lean with breakpoints and a live stack | [docs/debugging.md](docs/debugging.md) |
+| Call Lean from Java / JavaScript / Python | [docs/polyglot.md](docs/polyglot.md) |
+| Debug, profile, and measure coverage on Lean | [docs/debugging.md](docs/debugging.md) |
+| Understand the approach and its trade-offs | [docs/design.md](docs/design.md) |
 | Know what doesn't work yet | [docs/limitations.md](docs/limitations.md) |
 
 ## How it fits together

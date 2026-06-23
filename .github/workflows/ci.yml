@@ -66,5 +66,9 @@ jobs:
             make polyglot                               # documented names + a host lambda
             make incremental                            # incremental recompute, Java formulas
             make polyglot-js                            # same call from JavaScript (guest member-call path)
-            make debug DEBUG_SRC="$LEAN4J/Leancremental" # breakpoint + live frame
+            make polyglot-py                            # same call from Python / GraalPy
+            make debug    DEBUG_SRC="$LEAN4J/Leancremental" # breakpoint + live frame
+            make trace    DEBUG_SRC="$LEAN4J/Leancremental" # post-mortem source-located stack
+            make coverage DEBUG_SRC="$LEAN4J/Leancremental" # source-located coverage of Tests.Core
+            make profile  DEBUG_SRC="$LEAN4J/Leancremental" # source-located CPU profile of the engine
           '

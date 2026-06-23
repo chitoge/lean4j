@@ -8,7 +8,7 @@ JAVA     := $(GRAALVM)/bin/java
 CLS_DIR  := target/classes
 SMOKE_LOG := target/lean4j-smoke.log
 
-.PHONY: all java lir-export jit-example leancremental polyglot incremental polyglot-js json-example smoke debug trace bench clean
+.PHONY: all java lir-export jit-example leancremental polyglot incremental polyglot-js polyglot-py json-example smoke debug trace coverage profile bench clean
 
 all: java
 
@@ -26,8 +26,15 @@ MOD_PATH := $(M2)/org/graalvm/truffle/truffle-api/$(GVER)/truffle-api-$(GVER).ja
 # Truffle discovers classpath languages even when its runtime is a module.
 JS_CP := $(M2)/org/graalvm/js/js-language/$(GVER)/js-language-$(GVER).jar:$(M2)/org/graalvm/regex/regex/$(GVER)/regex-$(GVER).jar:$(M2)/org/graalvm/shadowed/icu4j/$(GVER)/icu4j-$(GVER).jar
 
-# Compile-time classpath (truffle-api + polyglot + sdk) and DSL annotation processor.
-COMPILE_CP := $(M2)/org/graalvm/truffle/truffle-api/$(GVER)/truffle-api-$(GVER).jar:$(M2)/org/graalvm/polyglot/polyglot/$(GVER)/polyglot-$(GVER).jar:$(M2)/org/graalvm/sdk/collections/$(GVER)/collections-$(GVER).jar:$(M2)/org/graalvm/sdk/word/$(GVER)/word-$(GVER).jar:$(M2)/org/graalvm/sdk/nativeimage/$(GVER)/nativeimage-$(GVER).jar
+# Truffle developer tools (CPU sampler + coverage) — used by the profile/coverage demos.
+TOOLS_CP := $(M2)/org/graalvm/tools/profiler-tool/$(GVER)/profiler-tool-$(GVER).jar:$(M2)/org/graalvm/tools/coverage-tool/$(GVER)/coverage-tool-$(GVER).jar
+
+# GraalPy (large, ~113 MB) — only on the classpath for the `make polyglot-py` test.
+# (icu4j + regex it also needs are already in JS_CP / RUN_CP.)
+PY_CP := $(M2)/org/graalvm/python/python-language/$(GVER)/python-language-$(GVER).jar:$(M2)/org/graalvm/python/python-resources/$(GVER)/python-resources-$(GVER).jar:$(M2)/org/graalvm/python/python-embedding/$(GVER)/python-embedding-$(GVER).jar
+
+# Compile-time classpath (truffle-api + polyglot + sdk + the tools) and DSL annotation processor.
+COMPILE_CP := $(M2)/org/graalvm/truffle/truffle-api/$(GVER)/truffle-api-$(GVER).jar:$(M2)/org/graalvm/polyglot/polyglot/$(GVER)/polyglot-$(GVER).jar:$(M2)/org/graalvm/sdk/collections/$(GVER)/collections-$(GVER).jar:$(M2)/org/graalvm/sdk/word/$(GVER)/word-$(GVER).jar:$(M2)/org/graalvm/sdk/nativeimage/$(GVER)/nativeimage-$(GVER).jar:$(TOOLS_CP)
 DSL_PROC   := $(M2)/org/graalvm/truffle/truffle-dsl-processor/$(GVER)/truffle-dsl-processor-$(GVER).jar
 
 JAVA_SRC := $(wildcard core/src/main/java/lean4j/lir/*.java) \
@@ -126,6 +133,18 @@ polyglot-js: java
 		-cp "$(RUN_CP)" \
 		lean4j.LeanJsDemo
 
+# The same call from Python (GraalPy): getattr(api, 'name')(...) with a Python lambda, and
+# asserts the result — the companion to polyglot-js. GraalPy is large, so it's only on this
+# target's classpath. (Uses the Leancremental example.)
+polyglot-py: java
+	@test -f "$(LC_IR)" || { \
+		echo "Missing $(LC_IR) — lower the library first (default devShell):"; \
+		echo "  cd <Leancremental checkout> && LEAN4J_OUT=$(abspath lean-runtime) lake env lean Export.lean"; exit 1; }
+	$(JAVA) $(RUN_FLAGS) \
+		-Dlean4j.ir=$(LC_IR) \
+		-cp "$(RUN_CP):$(PY_CP)" \
+		lean4j.LeanPyDemo
+
 # Standard-library example: call Lean's own JSON parser from the JVM. Lower it first with
 #   lake build && LEAN4J_OUT=$(abspath lean-runtime) lake env lean examples/JsonExport.lean
 JSON_IR ?= $(abspath lean-runtime/json_ir.json)
@@ -179,6 +198,28 @@ trace: java
 		-Dlean4j.ir=$(DEBUG_IR) \
 		-Dlean.src=$(DEBUG_SRC) \
 		-cp "$(RUN_CP)" lean4j.LeanDebugDemo
+
+# Source-located coverage: point Truffle's coverage instrument at the interpreter, run the
+# library's own Tests.Core, and report which library functions it touched, by .lean line.
+coverage: java
+	@test -f "$(DEBUG_IR)" || { \
+		echo "Missing $(DEBUG_IR) — lower the library first (with src_ranges.json for source):"; \
+		echo "  cd <library checkout> && lake env lean Export.lean"; exit 1; }
+	$(JAVA) $(RUN_FLAGS) \
+		-Dlean4j.ir=$(DEBUG_IR) \
+		-Dlean.src=$(DEBUG_SRC) \
+		-cp "$(RUN_CP):$(TOOLS_CP)" lean4j.LeanCoverageDemo
+
+# Source-located CPU profile: run a stabilize-heavy workload under Truffle's CPU sampler and
+# report the hot Lean functions by .lean line — where the incremental engine spends its time.
+profile: java
+	@test -f "$(DEBUG_IR)" || { \
+		echo "Missing $(DEBUG_IR) — lower the library first (with src_ranges.json for source):"; \
+		echo "  cd <library checkout> && lake env lean Export.lean"; exit 1; }
+	$(JAVA) $(RUN_FLAGS) \
+		-Dlean4j.ir=$(DEBUG_IR) \
+		-Dlean.src=$(DEBUG_SRC) \
+		-cp "$(RUN_CP):$(TOOLS_CP)" lean4j.LeanProfileDemo
 
 # A/B benchmark: v3 (PE nodes, JIT) vs v2 (tree-walker). Shows TraceCompilation.
 bench: java lir-export

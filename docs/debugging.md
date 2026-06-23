@@ -74,6 +74,41 @@ Programmatically it's the standard Truffle `Debugger` API: start a session, inst
 each frame's scope. Because it's the same instrument as the Chrome inspector, you can also
 attach a browser-based debugger to the running JVM.
 
+## Coverage and profiling
+
+The same source sections drive Truffle's coverage and CPU-profiler tools, so you get both on
+**unmodified** library code, source-located. (Like the debugger, this is function-level — the
+entries are functions, not lines.)
+
+**Coverage** — `make coverage`
+([`LeanCoverageDemo.java`](../core/src/test/java/lean4j/LeanCoverageDemo.java)) points
+Truffle's coverage instrument at the interpreter, runs the library's own `Tests.Core`, and
+reports which of the library's functions that suite touched. Because lean4j translates every
+declaration up front, the denominator is the whole surfaced set — so the number is *real*,
+not "everything that ran is 100% covered":
+
+```
+coverage: 194 / 298 library functions  (65%)
+…
+some functions Tests.Core never reached:
+  Leancremental.FederatedState.advanceFrontier   Federation.lean:89
+```
+
+**Profiling** — `make profile`
+([`LeanProfileDemo.java`](../core/src/test/java/lean4j/LeanProfileDemo.java)) runs a
+stabilize-heavy workload under the CPU sampler and reports the hot Lean functions by `.lean`
+line. With trivial Java combiners, the time lands squarely in the incremental engine:
+
+```
+hot Lean functions (self-samples · function · source):
+      39  Leancremental.Internal.State.stabilizeOne       Internal.lean:668
+      31  Leancremental.Internal.State.enqueueRecompute   Internal.lean:222
+      25  Leancremental.Internal.State.drainRecomputeHeap Internal.lean:715
+```
+
+Both rely on the same `src_ranges.json` + `-Dlean.src` as the debugger, and fail loudly if
+they're missing rather than silently dropping the source locations.
+
 ## What you can and can't see
 
 Be clear-eyed about the granularity — it's **function-level**, and that's a real boundary,

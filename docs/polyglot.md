@@ -136,9 +136,10 @@ node = getattr(api, "YourLib.map2")(left, right, lambda a, b: a * b)
 ```
 
 In both, `api.<name>` reads the function as a callable and the guest lambda is routed back
-as a Lean closure — the same `module.api` surface you call from Java. `make polyglot-js`
-([`LeanJsDemo.java`](../core/src/test/java/lean4j/LeanJsDemo.java)) runs and asserts the
-JavaScript path in CI; the GraalPy path is the same member-read-then-call interop.
+as a Lean closure — the same `module.api` surface you call from Java. Both are exercised in
+CI: `make polyglot-js` ([`LeanJsDemo.java`](../core/src/test/java/lean4j/LeanJsDemo.java)) and
+`make polyglot-py` ([`LeanPyDemo.java`](../core/src/test/java/lean4j/LeanPyDemo.java)) build
+the graph and assert the result from JavaScript and Python respectively.
 
 ## A note on what `surface` gives you
 
