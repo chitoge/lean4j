@@ -157,21 +157,18 @@ one shows.
 
 ## Running your own lowered library
 
-The `make` targets above default to `lean-runtime/leancremental_ir.json`, but they take an
-override so you can point them at any IR you've produced:
+Heads-up: the `make` demos above are wired to **Leancremental specifically** — they call its
+functions by name (`Leancremental.State.create`, `testCore`, …). The `LC_IR` / `DEBUG_IR`
+overrides only relocate *Leancremental's* IR (handy if you lowered it into your own checkout
+instead of `lean-runtime/`); they do **not** make a demo run a *different* library — point one
+at your library's IR and it'll just fail looking for functions that aren't there.
 
-```bash
-make leancremental LC_IR=/path/to/yourlib_ir.json
-make debug         DEBUG_IR=/path/to/yourlib_ir.json DEBUG_SRC=/path/to/your-library
-```
-
-(For debugging, `src_ranges.json` needs to sit next to the IR file — both land in the same
-directory when you set `LEAN4J_OUT` to point there.)
-
-More commonly you'll skip the demo targets and write your own small Java or JS runner that
-loads the IR and calls into it — that's the [polyglot](polyglot.md) scenario, only a few
-lines. And if you point a run target at an IR that isn't there yet, it won't crash
-mysteriously — it tells you to lower the library first.
+To run **your own** library you write a short runner that calls *your* functions — the
+[polyglot](polyglot.md) scenario, a few lines in Java, JS, or Python. The debugging, coverage,
+and profiling are general in the same way: they're stock Truffle instruments (`Debugger`,
+`CoverageTracker`, `CPUSampler`) over any lowered IR that carries `src_ranges.json` +
+`-Dlean.src`. The demos wire them to Leancremental; you'd wire the same handful of lines to
+yours. (Point a target at a missing IR and it tells you to lower first, rather than crashing.)
 
 ## What's actually in the IR
 

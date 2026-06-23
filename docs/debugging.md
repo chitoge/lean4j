@@ -107,7 +107,10 @@ hot Lean functions (self-samples · function · source):
 ```
 
 Both rely on the same `src_ranges.json` + `-Dlean.src` as the debugger, and fail loudly if
-they're missing rather than silently dropping the source locations.
+they're missing rather than silently dropping the source locations. And like the debugger,
+`make coverage`/`make profile` are demos wired to Leancremental — the instruments themselves
+(`CoverageTracker`, `CPUSampler`) are standard Truffle and work on any lowered library once
+you point a workload at it.
 
 ## What you can and can't see
 

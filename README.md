@@ -1,22 +1,25 @@
 # lean4j
 
-**Run compiled Lean 4 on the JVM.**
+**Run Lean 4 on the JVM — a debuggable, polyglot interpreter.**
 
 lean4j takes a Lean 4 library, lowers it to a compact intermediate representation (IR),
-and runs that IR on [GraalVM](https://www.graalvm.org/)'s Truffle framework — a
-JIT-compiling interpreter on the JVM. Once your Lean code is running there, two things
-come for free that you don't get from native Lean:
+and *interprets* that IR on [GraalVM](https://www.graalvm.org/)'s Truffle framework (which
+JITs the hot paths). It runs Lean's compiled IR, not its native binary, and reimplements the
+runtime on the JVM — so it's not a faithful, fast drop-in for native Lean (see
+[docs/design.md](docs/design.md)). What it *is* good at: two things you don't get from native
+Lean at all —
 
-- **Polyglot interop.** Call your Lean functions from Java or JavaScript like any other
-  library — pass native lambdas, get back values you can read. No FFI, no `lean_object*`.
-- **Source-level debugging.** Set a breakpoint on a Lean function, suspend, walk the
-  call stack with real `.lean` file/line locations, and inspect the live values — all on
-  **unmodified** library code. (Native Lean compiles to C, so debugging there means gdb
-  on refcounted C structs.)
+- **Polyglot interop.** Call your Lean functions from Java, JavaScript, or Python like any
+  other library — pass native lambdas, get back values you can read. No FFI, no `lean_object*`.
+- **Source-level tooling.** Set a breakpoint on a Lean function, walk the stack, and inspect
+  live values — plus source-located profiling and coverage — all on **unmodified** library
+  code, located to real `.lean` lines. (Native Lean compiles to C, so this would otherwise
+  mean gdb on refcounted C structs.)
 
-It's a JIT *interpreter*, not an ahead-of-time compiler, so it trades raw speed for that
-interop and tooling. If you want the JVM ecosystem, polyglot embedding, or a real
-debugger for Lean, that's the trade lean4j makes.
+Reach for lean4j when you want the JVM ecosystem, polyglot embedding, or real source-level
+tooling for Lean libraries — not when you need native speed or bit-exact fidelity.
+[docs/design.md](docs/design.md) and [docs/limitations.md](docs/limitations.md) are honest
+about where that line is.
 
 ## Quickstart
 

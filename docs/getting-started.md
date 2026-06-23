@@ -83,10 +83,11 @@ whole pipeline working end to end. Where to next:
 | `make coverage` | source-located code coverage of a lowered library |
 | `make profile` | source-located CPU profile of a lowered library |
 
-The `leancremental` / `polyglot` / `incremental` / `polyglot-js` / `debug` / `trace` /
-`coverage` / `profile` targets run a *pre-lowered* library, so they need its IR present first
-— they tell you how to generate it if it's missing
-([generate-ir-and-run.md](generate-ir-and-run.md) walks through it).
+The `leancremental` / `polyglot` / `incremental` / `polyglot-js` / `polyglot-py` / `debug` /
+`trace` / `coverage` / `profile` targets are demos **wired to the Leancremental example** —
+they call its functions by name, so they need *its* IR present first (they tell you how to
+lower it if it's missing). To run these capabilities against *your own* library you write a
+short runner; [generate-ir-and-run.md](generate-ir-and-run.md) explains both.
 
 Each demo's source lives under [`core/src/test/java/lean4j/`](../core/src/test/java/lean4j/),
 the exporter scripts under [`examples/`](../examples/), and the reusable exporter library at
